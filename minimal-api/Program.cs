@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using minimal_api.Dominio.Dtos;
 using minimal_api.Dominio.Entidades;
+using minimal_api.Dominio.Enuns;
 using minimal_api.Dominio.Interfaces;
 using minimal_api.Dominio.ModelViews;
 using minimal_api.Dto;
@@ -38,6 +39,50 @@ app.MapPost("administrador/login", ([FromBody] LoginDTO login, IAdministradorSer
         return Results.Ok("Login feito com sucesso");
     else
         return Results.Unauthorized();
+}).WithTags("Administrador");
+
+app.MapPost("administrador", ([FromBody] AdministradorDTO AdministradorDTO, IAdministradorServico administradorServico) => 
+{
+    var adm = new Administrador{
+        Email = AdministradorDTO.Email,
+        Senha = AdministradorDTO.Senha,
+        Perfil = AdministradorDTO.Perfil.ToString()
+    };
+
+    administradorServico.Incluir(adm);
+
+    return Results.Created();
+}).WithTags("Administrador");
+
+app.MapGet("administrador", ([FromQuery] int? pagina, IAdministradorServico administradorServico) => 
+{
+    var administradoresModelView = new List<AdministradorModelView>();
+    var administradores = administradorServico.Todos(pagina);
+
+    foreach (var adm in administradores)
+    {
+        administradoresModelView.Add(new AdministradorModelView{
+            Id = adm.Id,
+            Email = adm.Email,
+            Perfil = adm.Perfil
+        });
+    }
+    return Results.Ok(administradoresModelView);
+}).WithTags("Administrador");
+
+app.MapGet("administrador/{id}", ([FromRoute] int id, IAdministradorServico administradorServico) => 
+{
+    var administrador = administradorServico.BuscaPorId(id);
+    
+    if (administrador is null)
+        return Results.NotFound();
+
+    return Results.Ok(new AdministradorModelView{
+            Id = administrador.Id,
+            Email = administrador.Email,
+            Perfil = administrador.Perfil
+        });
+
 }).WithTags("Administrador");
 #endregion
 
